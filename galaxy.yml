@@ -1,0 +1,15 @@
+namespace: autoware
+name: github_runner
+version: 0.1.0
+readme: README.md
+authors:
+  - M. Fatih Cırıt <mfc@autoware.org>
+description: Sets up the GitHub runner for Autoware repositories
+license:
+  - Apache-2.0
+tags:
+  - autoware
+  - github-runner
+repository: https://github.com/autowarefoundation/autoware-github-runner-ansible
+homepage: https://www.autoware.org/
+issues: https://github.com/autowarefoundation/autoware-github-runner-ansible/issues
