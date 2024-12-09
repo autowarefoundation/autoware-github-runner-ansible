@@ -42,11 +42,12 @@ sudo reboot
 
 - 🔴 Modify the PAT according to https://github.com/MonolithProjects/ansible-github_actions_runner?tab=readme-ov-file#requirements .
 - 🔴 Modify the runner name.
+- 🔴 Modify the GitHub account.
 
 ```bash
 export PERSONAL_ACCESS_TOKEN=<your_personal_access_token>
 
-ansible-playbook autoware.github_runner.runner_setup --ask-become-pass  --extra-vars "runner_name=ovh-runner-01 reinstall_runner=true"
+ansible-playbook autoware.github_runner.runner_setup --ask-become-pass  --extra-vars "runner_name=ovh-runner-01 reinstall_runner=true github_account=xmfcx"
 ```
 
 Set up the clean-up script.

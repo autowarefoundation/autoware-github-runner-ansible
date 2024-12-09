@@ -3,7 +3,6 @@
   runner_user: "ubuntu"
   become: yes
   vars:
-    - github_account: "xmfcx"
     - github_owner: "autowarefoundation"
     - runner_org: yes
     - runner_group: "Default"
