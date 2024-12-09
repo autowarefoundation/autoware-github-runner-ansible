@@ -24,9 +24,7 @@ pipx install --include-deps --force ansible
 ### Install ansible collections
 
 ```bash
-ansible-galaxy collection install -f -r "requirements.yaml"
-
-ansible-galaxy role install git+https://github.com/MonolithProjects/ansible-github_actions_runner.git,1.21.1
+ansible-galaxy install -f -r requirements.yaml
 ```
 
 ### Playbooks
