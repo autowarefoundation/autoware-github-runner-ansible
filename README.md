@@ -40,7 +40,7 @@ sudo reboot
 
 #### Runner setup
 
-- 🔴 Modify the PAT according to https://github.com/MonolithProjects/ansible-github_actions_runner?tab=readme-ov-file#requirements .
+- 🔴 Modify the PAT according to <https://github.com/MonolithProjects/ansible-github_actions_runner?tab=readme-ov-file#requirements> .
 - 🔴 Modify the runner name.
 - 🔴 Modify the GitHub account.
 

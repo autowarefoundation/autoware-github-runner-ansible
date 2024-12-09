@@ -3,14 +3,14 @@
   ansible.builtin.file:
     path: /opt/runner-scripts
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Install the cleanup script
   become: yes
   ansible.builtin.copy:
     src: "{{ role_path }}/files/cleanup_script.sh"
     dest: "/opt/runner-scripts/cleanup_script.sh"
-    mode: '0755'
+    mode: "0755"
 
 - name: Append cleanup script to actions-runner .env
   become: yes
