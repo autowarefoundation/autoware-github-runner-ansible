@@ -1,20 +1,20 @@
 - name: Create directory for runner scripts
-  become: yes
+  become: true
   ansible.builtin.file:
     path: /opt/runner-scripts
     state: directory
     mode: "0755"
 
 - name: Install the cleanup script
-  become: yes
+  become: true
   ansible.builtin.copy:
     src: "{{ role_path }}/files/cleanup_script.sh"
-    dest: "/opt/runner-scripts/cleanup_script.sh"
+    dest: /opt/runner-scripts/cleanup_script.sh
     mode: "0755"
 
 - name: Append cleanup script to actions-runner .env
-  become: yes
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/actions-runner/.env
-    line: "ACTIONS_RUNNER_HOOK_JOB_STARTED=/opt/runner-scripts/cleanup_script.sh"
+    line: ACTIONS_RUNNER_HOOK_JOB_STARTED=/opt/runner-scripts/cleanup_script.sh
     create: true

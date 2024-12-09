@@ -1,11 +1,11 @@
 - name: Install GitHub Actions Runner
   hosts: localhost
-  runner_user: "ubuntu"
-  become: yes
+  runner_user: ubuntu
+  become: true
   vars:
-    - github_owner: "autowarefoundation"
-    - runner_org: yes
-    - runner_group: "Default"
+    - github_owner: autowarefoundation
+    - runner_org: true
+    - runner_group: Default
     - runner_labels: [self-hosted, Linux, X64]
   roles:
     - role: monolithprojects.github_actions_runner
