@@ -9,4 +9,4 @@
     - runner_labels: [self-hosted, Linux, X64]
     - runner_dir: "{{ ansible_env.HOME }}/actions-runner"
   roles:
-    - monolithprojects.github_actions_runner
+    - role: monolithprojects.github_actions_runner
