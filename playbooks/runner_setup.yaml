@@ -1,0 +1,16 @@
+- name: Install docker engine
+  roles:
+    - autoware.github_runner.docker_engine
+
+- name: Install GitHub Actions Runner
+  hosts: localhost
+  become: yes
+  vars:
+    - github_account: "xmfcx"
+    - github_owner: "autowarefoundation"
+    - runner_org: yes
+    - runner_group: "Default"
+    - runner_labels: [self-hosted, Linux, X64]
+    - runner_dir: "{{ ansible_env.HOME }}/actions-runner"
+  roles:
+    - role: monolithprojects.github_actions_runner
