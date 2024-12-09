@@ -1,16 +1,16 @@
 - name: Ensure apt cache is updated
   apt:
-    update_cache: yes
-  become: yes
+    update_cache: true
+  become: true
 
 - name: Install ncdu
   apt:
     name: ncdu
     state: present
-  become: yes
+  become: true
 
 - name: Install screenfetch
   apt:
     name: screenfetch
     state: present
-  become: yes
+  become: true
