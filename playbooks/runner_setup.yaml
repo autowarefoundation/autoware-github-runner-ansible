@@ -1,7 +1,3 @@
-- name: Install docker engine
-  roles:
-    - autoware.github_runner.docker_engine
-
 - name: Install GitHub Actions Runner
   hosts: localhost
   become: yes
