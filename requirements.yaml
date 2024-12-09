@@ -1,6 +1,7 @@
-collections:
+roles:
   - source: https://github.com/MonolithProjects/ansible-github_actions_runner.git
     version: 1.21.1
     name: monolithprojects.github_actions_runner
+collections:
   - source: ./
     type: dir
