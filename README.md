@@ -29,6 +29,12 @@ ansible-galaxy install -f -r requirements.yaml
 
 ### Playbooks
 
+#### Install useful apps
+
+```bash
+ansible-playbook autoware.github_runner.useful_apps --ask-become-pass
+```
+
 #### Docker setup
 
 ```bash

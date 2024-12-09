@@ -1,0 +1,4 @@
+- name: Install useful apps
+  hosts: localhost
+  roles:
+    - autoware.github_runner.useful_apps
