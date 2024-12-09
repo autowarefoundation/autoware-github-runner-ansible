@@ -1,0 +1,16 @@
+# Vim
+*.swp
+*.swo
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Python
+*.pyc
+
+#prettier
+node_modules/
+
+# Jetbrains
+.idea/
