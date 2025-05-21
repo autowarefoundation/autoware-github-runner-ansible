@@ -2,8 +2,12 @@
 # https://github.com/autowarefoundation/sync-file-templates
 # To make changes, update the source repository and follow the guidelines in its README.
 
+# https://pre-commit.ci/#configuration
 ci:
   autofix_commit_msg: "style(pre-commit): autofix"
+  # we already have our own daily update mechanism, we set this to quarterly
+  autoupdate_schedule: quarterly
+  autoupdate_commit_msg: "ci(pre-commit): quarterly autoupdate"
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -36,6 +40,11 @@ repos:
     rev: v1.35.1
     hooks:
       - id: yamllint
+
+  - repo: https://github.com/autowarefoundation/autoware-guideline-check
+    rev: 0.1.0
+    hooks:
+      - id: check-package-depends
 
   - repo: https://github.com/tier4/pre-commit-hooks-ros
     rev: v0.10.0
@@ -70,7 +79,7 @@ repos:
         args: [--line-length=100]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v19.1.4
+    rev: v19.1.6
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
