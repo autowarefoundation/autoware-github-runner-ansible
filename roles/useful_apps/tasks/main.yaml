@@ -14,3 +14,9 @@
     name: screenfetch
     state: present
   become: true
+
+- name: Install ranger
+  apt:
+    name: ranger
+    state: present
+  become: true
