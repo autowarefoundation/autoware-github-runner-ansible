@@ -20,3 +20,22 @@
     name: ranger
     state: present
   become: true
+
+- name: Gather hardware facts
+  setup:
+    gather_subset:
+      - hardware
+
+- name: Install Intel microcode if CPU is Intel
+  apt:
+    name: intel-microcode
+    state: present
+  when: ansible_facts['processor'][0] is search("GenuineIntel")
+  become: true
+
+- name: Install AMD microcode if CPU is AMD
+  apt:
+    name: amd64-microcode
+    state: present
+  when: ansible_facts['processor'][0] is search("AuthenticAMD")
+  become: true
