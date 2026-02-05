@@ -30,6 +30,18 @@ echo "=== STEP 1: All Docker Images (Before Cleanup) ==="
 docker images --format 'Repository: {{.Repository}} | Tag: {{.Tag}} | ID: {{.ID}} | Created: {{.CreatedSince}} | Size: {{.Size}}'
 echo
 
+# Stop all running containers
+echo "=== STEP 2: Stopping All Running Containers ==="
+running_containers=$(docker ps -q)
+if [[ -n $running_containers ]]; then
+    echo "Found running containers. Stopping them now..."
+    docker stop $running_containers
+    echo "All containers stopped."
+else
+    echo "No running containers found."
+fi
+echo
+
 # Get all unique image IDs
 echo "Collecting unique image metadata..."
 image_list=$(docker images --format '{{.ID}}' | sort | uniq |
@@ -39,7 +51,7 @@ image_list=$(docker images --format '{{.ID}}' | sort | uniq |
     done | sort -r)
 
 # Preview images to be removed
-echo "=== STEP 2: Images That Will Be REMOVED (Keeping last $keep_last_x) ==="
+echo "=== STEP 3: Images That Will Be REMOVED (Keeping last $keep_last_x) ==="
 to_remove=$(echo "$image_list" | tail -n +$((keep_last_x + 1)))
 echo "$to_remove" | awk '{printf "ID: %s | Created: %s\n", $2, $1}'
 
@@ -50,5 +62,5 @@ echo "$to_remove" | awk '{print $2}' | xargs -r docker rmi -f
 echo
 
 # Show remaining images
-echo "=== STEP 3: Remaining Docker Images (After Cleanup) ==="
+echo "=== STEP 4: Remaining Docker Images (After Cleanup) ==="
 docker images --format 'Repository: {{.Repository}} | Tag: {{.Tag}} | ID: {{.ID}} | Created: {{.CreatedSince}} | Size: {{.Size}}'
