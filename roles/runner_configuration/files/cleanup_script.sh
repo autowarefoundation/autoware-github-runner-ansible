@@ -1,121 +1,151 @@
 #!/bin/bash
+#
+# cleanup-runner.sh — Reclaim disk space on a GitHub Actions runner
+#
+# Tasks:
+#   1. Record baseline disk & Docker usage
+#   2. Clean the runner temp directory
+#   3. List all Docker images (pre-cleanup)
+#   4. Stop all running containers
+#   5. Remove all stopped containers
+#   6. Remove all but the N most recent images
+#   7. Prune dangling/intermediate image layers
+#   8. Prune unused volumes
+#   9. Prune build cache
+#  10. Report post-cleanup status
+#
 
-set -euo pipefail
+KEEP_IMAGES=15
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+banner() {
+    echo
+    echo "──── $1 ────"
+}
+
+info()    { echo "  $1"; }
+warn()    { echo "  ⚠ $1" >&2; }
+success() { echo "  ✓ $1"; }
+
+disk_summary() {
+    df -h / | tail -1 | awk '{printf "%s used of %s (%s free)\n", $3, $2, $4}'
+}
+
+image_count() {
+    docker images -q | sort -u | wc -l
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 echo "=========================================="
-echo "  GitHub Runner Cleanup Script"
+echo "  GitHub Runner Cleanup"
 echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
-echo
 
-# --- STEP 0: Disk usage before cleanup ---
-echo "=== STEP 0: Disk & Docker Usage (Before Cleanup) ==="
-df -h / | tail -1 | awk '{printf "Disk: %s used of %s (%s free)\n", $3, $2, $4}'
-echo
+# 1. Baseline snapshot
+banner "1. Baseline"
+info "Disk : $(disk_summary)"
+info "Images: $(image_count) unique"
 docker system df
-echo
+count_before=$(image_count)
 
-# --- STEP 1: Clean RUNNER_TEMP ---
-echo "=== STEP 1: Runner Temp Cleanup ==="
-if [[ -n "${GITHUB_WORKSPACE:-}" && -d "$GITHUB_WORKSPACE" ]]; then
-    echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-    ls -al "$GITHUB_WORKSPACE"
-else
-    echo "GITHUB_WORKSPACE is not set or does not exist. Skipping."
-fi
-echo
-
+# 2. Clean runner temp directory
+banner "2. Runner Temp"
 if [[ -n "${RUNNER_TEMP:-}" && -d "$RUNNER_TEMP" ]]; then
-    echo "Cleaning up contents of: $RUNNER_TEMP"
-    sudo rm -rf "${RUNNER_TEMP:?}/"*
-    sudo rm -rf "${RUNNER_TEMP:?}/".* 2>/dev/null || true
-    echo "Done."
+    info "Cleaning $RUNNER_TEMP"
+    find "$RUNNER_TEMP" -mindepth 1 -delete 2>/dev/null || warn "Some temp files could not be removed"
+    success "Done"
 else
-    echo "RUNNER_TEMP is not set or does not exist. Skipping."
+    info "RUNNER_TEMP is not set or missing — skipping"
 fi
-echo
 
-# --- STEP 2: Show all Docker images before cleanup ---
-echo "=== STEP 2: All Docker Images (Before Cleanup) ==="
-docker images -a --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
-echo
-total_before=$(docker images -a --format '{{.ID}}' | sort -u | wc -l)
-echo "Total unique images (including intermediate): $total_before"
-echo
+# 3. List images before cleanup
+banner "3. Docker Images (pre-cleanup)"
+docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
 
-# --- STEP 3: Stop and remove all containers ---
-echo "=== STEP 3: Stopping All Running Containers ==="
-running_containers=$(docker ps -q)
-if [[ -n "$running_containers" ]]; then
-    echo "Found running containers. Stopping them now..."
-    docker stop $running_containers
-    echo "All containers stopped."
+# 4. Stop all running containers
+banner "4. Stop Running Containers"
+if running=$(docker ps -q) && [[ -n "$running" ]]; then
+    echo "$running" | xargs docker stop
+    success "Stopped $(echo "$running" | wc -l) container(s)"
 else
-    echo "No running containers found."
+    info "No running containers"
 fi
-echo
 
-echo "Removing all stopped containers..."
+# 5. Remove all stopped containers
+banner "5. Remove Stopped Containers"
 docker container prune -f
-echo
 
-# --- STEP 4: Remove old images (keep most recent N) ---
-# Number of most recent images to keep
-keep_last_x=15
+# 6. Remove all but the newest N images
+banner "6. Image Cleanup (keeping newest $KEEP_IMAGES)"
 
-echo "=== STEP 4: Image Cleanup (Keeping newest $keep_last_x) ==="
-echo "Collecting unique image metadata..."
+# Build a sorted list: newest-first, one line per unique image ID
+image_list=$(
+    docker images -q | sort -u | while read -r id; do
+        ts=$(docker inspect --format '{{.Created}}' "$id" 2>/dev/null) || continue
+        echo "$ts $id"
+    done | sort -r
+)
+total=$(echo "$image_list" | grep -c . || true)
 
-# Use -a to include intermediate layers
-image_list=$(docker images -a --format '{{.ID}}' | sort -u |
-    while read -r id; do
-        created=$(docker inspect --format '{{.Created}}' "$id" 2>/dev/null) || continue
-        echo "$created $id"
-    done | sort -r)
-
-total_images=$(echo "$image_list" | grep -c . || true)
-echo "Found $total_images unique images."
-
-if [[ $total_images -le $keep_last_x ]]; then
-    echo "Only $total_images images found (<= $keep_last_x). No age-based removal needed."
+if [[ $total -le $KEEP_IMAGES ]]; then
+    info "Only $total image(s) present — nothing to remove"
 else
-    to_remove=$(echo "$image_list" | tail -n +$((keep_last_x + 1)))
-    remove_count=$(echo "$to_remove" | grep -c . || true)
-    echo "Removing $remove_count images..."
-    echo "$to_remove" | awk '{printf "  ID: %s | Created: %s\n", $2, $1}'
+    # Split into keep / remove sets
+    keep_ids=$(echo "$image_list" | head -n "$KEEP_IMAGES" | awk '{print $2}')
+    remove_ids=$(echo "$image_list" | tail -n +$((KEEP_IMAGES + 1)) | awk '{print $2}')
+    remove_count=$(echo "$remove_ids" | wc -l)
+
+    info "Keeping $KEEP_IMAGES, removing $remove_count"
     echo
+    info "Keeping:"
+    echo "$keep_ids" | while read -r id; do
+        tags=$(docker inspect --format '{{join .RepoTags ", "}}' "$id" 2>/dev/null)
+        info "  $id  ${tags:-<none>}"
+    done
 
-    echo "$to_remove" | awk '{print $2}' | xargs -r docker rmi -f 2>&1 | grep -v "image is referenced" || true
+    echo
+    info "Removing:"
+    echo "$remove_ids" | while read -r id; do
+        tags=$(docker inspect --format '{{join .RepoTags ", "}}' "$id" 2>/dev/null)
+        info "  $id  ${tags:-<none>}"
+
+        # Untag all references first, then force-remove the ID
+        docker inspect --format '{{range .RepoTags}}{{.}}{{"\n"}}{{end}}' "$id" 2>/dev/null |
+            grep -v '^$' |
+            while read -r tag; do
+                docker rmi "$tag" 2>/dev/null || true
+            done
+        docker rmi -f "$id" 2>/dev/null || warn "Could not remove $id"
+    done
 fi
-echo
 
-# --- STEP 5: Prune dangling images, unused volumes, and build cache ---
-echo "=== STEP 5: Docker System Prune ==="
-
-echo "Pruning dangling images..."
+# 7. Prune dangling / intermediate layers
+banner "7. Prune Dangling Layers"
 docker image prune -f
-echo
 
-echo "Pruning unused volumes..."
+# 8. Prune unused volumes
+banner "8. Prune Unused Volumes"
 docker volume prune -f
-echo
 
-echo "Pruning build cache..."
+# 9. Prune build cache and networks
+banner "9. Prune Build Cache & Networks"
 docker builder prune -f 2>/dev/null || true
-echo
+docker network prune -f 2>/dev/null || true
 
-# --- STEP 6: Summary ---
-echo "=== STEP 6: Post-Cleanup Status ==="
-docker images -a --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
+# 10. Post-cleanup report
+banner "10. Post-Cleanup Report"
+docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
 echo
-
-total_after=$(docker images -a --format '{{.ID}}' | sort -u | wc -l)
-echo "Images removed: $((total_before - total_after)) (was $total_before, now $total_after)"
+count_after=$(image_count)
+info "Images : $count_after (removed $((count_before - count_after)))"
+info "Disk   : $(disk_summary)"
 echo
-
 docker system df
 echo
-
-df -h / | tail -1 | awk '{printf "Disk: %s used of %s (%s free)\n", $3, $2, $4}'
-echo
-echo "Cleanup complete."
+success "Cleanup complete"
