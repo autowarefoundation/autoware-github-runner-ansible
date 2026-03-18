@@ -10,7 +10,7 @@
 #   5. Remove all stopped containers
 #   6. Remove all but the N most recent images
 #   7. Prune dangling/intermediate image layers
-#   8. Prune unused volumes
+#   8. Remove all local volumes
 #   9. Prune build cache
 #  10. Report post-cleanup status
 #
@@ -129,9 +129,15 @@ fi
 banner "7. Prune Dangling Layers"
 docker image prune -f
 
-# 8. Prune unused volumes
-banner "8. Prune Unused Volumes"
-docker volume prune -f
+# 8. Remove all local volumes
+banner "8. Remove All Volumes"
+if volumes=$(docker volume ls -q) && [[ -n "$volumes" ]]; then
+    vol_count=$(echo "$volumes" | wc -l)
+    echo "$volumes" | xargs docker volume rm -f 2>/dev/null || warn "Some volumes could not be removed"
+    success "Removed $vol_count volume(s)"
+else
+    info "No volumes found"
+fi
 
 # 9. Prune build cache and networks
 banner "9. Prune Build Cache & Networks"
