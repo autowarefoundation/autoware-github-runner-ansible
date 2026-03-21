@@ -67,16 +67,11 @@ fi
 
 # 3. Reset runner home directory
 banner "3. Reset Runner Home"
-if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-    RUNNER_HOME="${HOME:-/github/home}"
-    if [[ -d "$RUNNER_HOME" ]]; then
-        find "$RUNNER_HOME" -mindepth 1 -delete 2>/dev/null || warn "Some files could not be removed"
-        success "Cleaned $RUNNER_HOME"
-    else
-        info "$RUNNER_HOME does not exist — skipping"
-    fi
+if [[ -d "/github/home" ]]; then
+    find /github/home -mindepth 1 -delete 2>/dev/null || warn "Some files could not be removed"
+    success "Cleaned /github/home"
 else
-    info "Not running as a job hook — skipping home cleanup"
+    info "/github/home does not exist — skipping"
 fi
 
 # 4. List images before cleanup
