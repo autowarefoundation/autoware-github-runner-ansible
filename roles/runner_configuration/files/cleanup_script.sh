@@ -58,10 +58,20 @@ count_before=$(image_count)
 banner "2. Runner Temp"
 if [[ -n "${RUNNER_TEMP:-}" && -d "$RUNNER_TEMP" ]]; then
     info "Cleaning $RUNNER_TEMP"
-    find "$RUNNER_TEMP" -mindepth 1 -delete 2>/dev/null || warn "Some temp files could not be removed"
+    sudo find "$RUNNER_TEMP" -mindepth 1 -delete 2>/dev/null || warn "Some temp files could not be removed"
     success "Done"
 else
     info "RUNNER_TEMP is not set or missing — skipping"
+fi
+
+# 2b. Clean GitHub workspace
+banner "2b. GitHub Workspace"
+if [[ -n "${GITHUB_WORKSPACE:-}" && -d "$GITHUB_WORKSPACE" ]]; then
+    info "Cleaning $GITHUB_WORKSPACE"
+    sudo find "$GITHUB_WORKSPACE" -mindepth 1 -delete 2>/dev/null || warn "Some workspace files could not be removed"
+    success "Done"
+else
+    info "GITHUB_WORKSPACE is not set or missing — skipping"
 fi
 
 # 3. List images before cleanup
