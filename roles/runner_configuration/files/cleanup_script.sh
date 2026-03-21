@@ -5,15 +5,14 @@
 # Tasks:
 #   1. Record baseline disk & Docker usage
 #   2. Clean the runner temp directory
-#   3. Reset runner home directory
-#   4. List all Docker images (pre-cleanup)
-#   5. Stop all running containers
-#   6. Remove all stopped containers
-#   7. Remove all but the N most recent images
-#   8. Prune dangling/intermediate image layers
-#   9. Remove all local volumes
-#  10. Prune build cache
-#  11. Report post-cleanup status
+#   3. List all Docker images (pre-cleanup)
+#   4. Stop all running containers
+#   5. Remove all stopped containers
+#   6. Remove all but the N most recent images
+#   7. Prune dangling/intermediate image layers
+#   8. Remove all local volumes
+#   9. Prune build cache
+#  10. Report post-cleanup status
 #
 
 KEEP_IMAGES=15
@@ -65,21 +64,12 @@ else
     info "RUNNER_TEMP is not set or missing — skipping"
 fi
 
-# 3. Reset runner home directory
-banner "3. Reset Runner Home"
-if [[ -d "/github/home" ]]; then
-    find /github/home -mindepth 1 -delete 2>/dev/null || warn "Some files could not be removed"
-    success "Cleaned /github/home"
-else
-    info "/github/home does not exist — skipping"
-fi
-
-# 4. List images before cleanup
-banner "4. Docker Images (pre-cleanup)"
+# 3. List images before cleanup
+banner "3. Docker Images (pre-cleanup)"
 docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
 
-# 5. Stop all running containers
-banner "5. Stop Running Containers"
+# 4. Stop all running containers
+banner "4. Stop Running Containers"
 if running=$(docker ps -q) && [[ -n "$running" ]]; then
     echo "$running" | xargs docker stop
     success "Stopped $(echo "$running" | wc -l) container(s)"
@@ -87,12 +77,12 @@ else
     info "No running containers"
 fi
 
-# 6. Remove all stopped containers
-banner "6. Remove Stopped Containers"
+# 5. Remove all stopped containers
+banner "5. Remove Stopped Containers"
 docker container prune -f
 
-# 7. Remove all but the newest N images
-banner "7. Image Cleanup (keeping newest $KEEP_IMAGES)"
+# 6. Remove all but the newest N images
+banner "6. Image Cleanup (keeping newest $KEEP_IMAGES)"
 
 # Build a sorted list: newest-first, one line per unique image ID
 image_list=$(
@@ -135,12 +125,12 @@ else
     done
 fi
 
-# 8. Prune dangling / intermediate layers
-banner "8. Prune Dangling Layers"
+# 7. Prune dangling / intermediate layers
+banner "7. Prune Dangling Layers"
 docker image prune -f
 
-# 9. Remove all local volumes
-banner "9. Remove All Volumes"
+# 8. Remove all local volumes
+banner "8. Remove All Volumes"
 if volumes=$(docker volume ls -q) && [[ -n "$volumes" ]]; then
     vol_count=$(echo "$volumes" | wc -l)
     echo "$volumes" | xargs docker volume rm -f 2>/dev/null || warn "Some volumes could not be removed"
@@ -149,13 +139,13 @@ else
     info "No volumes found"
 fi
 
-# 10. Prune build cache and networks
-banner "10. Prune Build Cache & Networks"
+# 9. Prune build cache and networks
+banner "9. Prune Build Cache & Networks"
 docker builder prune -f 2>/dev/null || true
 docker network prune -f 2>/dev/null || true
 
-# 11. Post-cleanup report
-banner "11. Post-Cleanup Report"
+# 10. Post-cleanup report
+banner "10. Post-Cleanup Report"
 docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'
 echo
 count_after=$(image_count)
