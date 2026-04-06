@@ -26,8 +26,8 @@ banner() {
     echo "──── $1 ────"
 }
 
-info()    { echo "  $1"; }
-warn()    { echo "  ⚠ $1" >&2; }
+info() { echo "  $1"; }
+warn() { echo "  ⚠ $1" >&2; }
 success() { echo "  ✓ $1"; }
 
 disk_summary() {
@@ -56,7 +56,7 @@ count_before=$(image_count)
 
 # 2. Clean runner temp directory
 banner "2. Runner Temp"
-if [[ -n "${RUNNER_TEMP:-}" && -d "$RUNNER_TEMP" ]]; then
+if [[ -n ${RUNNER_TEMP:-} && -d $RUNNER_TEMP ]]; then
     info "Cleaning $RUNNER_TEMP"
     sudo find "$RUNNER_TEMP" -mindepth 1 -delete 2>/dev/null || warn "Some temp files could not be removed"
     success "Done"
@@ -66,7 +66,7 @@ fi
 
 # 2b. Clean GitHub workspace
 banner "2b. GitHub Workspace"
-if [[ -n "${GITHUB_WORKSPACE:-}" && -d "$GITHUB_WORKSPACE" ]]; then
+if [[ -n ${GITHUB_WORKSPACE:-} && -d $GITHUB_WORKSPACE ]]; then
     info "Cleaning $GITHUB_WORKSPACE"
     sudo find "$GITHUB_WORKSPACE" -mindepth 1 -delete 2>/dev/null || warn "Some workspace files could not be removed"
     success "Done"
@@ -80,7 +80,7 @@ docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSinc
 
 # 4. Stop all running containers
 banner "4. Stop Running Containers"
-if running=$(docker ps -q) && [[ -n "$running" ]]; then
+if running=$(docker ps -q) && [[ -n $running ]]; then
     echo "$running" | xargs docker stop
     success "Stopped $(echo "$running" | wc -l) container(s)"
 else
@@ -141,7 +141,7 @@ docker image prune -f
 
 # 8. Remove all local volumes
 banner "8. Remove All Volumes"
-if volumes=$(docker volume ls -q) && [[ -n "$volumes" ]]; then
+if volumes=$(docker volume ls -q) && [[ -n $volumes ]]; then
     vol_count=$(echo "$volumes" | wc -l)
     echo "$volumes" | xargs docker volume rm -f 2>/dev/null || warn "Some volumes could not be removed"
     success "Removed $vol_count volume(s)"
