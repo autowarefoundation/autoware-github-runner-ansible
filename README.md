@@ -53,8 +53,11 @@ sudo reboot
 ```bash
 export PERSONAL_ACCESS_TOKEN=<your_personal_access_token>
 
-ansible-playbook autoware.github_runner.runner_setup --ask-become-pass  --extra-vars "runner_name=ovh-runner-01 reinstall_runner=true github_account=xmfcx"
+ansible-playbook autoware.github_runner.runner_setup --ask-become-pass \
+  --extra-vars '{"runner_name":"ovh-runner-01","reinstall_runner":true,"github_account":"xmfcx"}'
 ```
+
+Use JSON extra variables so `reinstall_runner` is passed as a boolean. The `key=value` format passes `true` as a string, which causes the role's conditional to fail on Ansible versions that require boolean conditions.
 
 Set up the clean-up script.
 
